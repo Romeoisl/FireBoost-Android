@@ -19,7 +19,9 @@ permissions:
 
 jobs:
   build-apk:
+    name: Build FireBoost debug + release APK
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,20 +46,31 @@ jobs:
           curl -fsSL https://services.gradle.org/distributions/gradle-8.10.2-bin.zip -o /tmp/gradle.zip
           unzip -q /tmp/gradle.zip -d /tmp/gradle
 
+      - name: Validate project
+        run: |
+          test -f settings.gradle
+          test -f app/build.gradle
+          test -f app/src/main/AndroidManifest.xml
+          test -f app/src/main/kotlin/com/fireboost/launcher/MainActivity.kt
+
       - name: Build debug APK
         run: /tmp/gradle/gradle-8.10.2/bin/gradle assembleDebug --no-daemon --stacktrace
 
-      - name: Collect APK
+      - name: Build release APK
+        run: /tmp/gradle/gradle-8.10.2/bin/gradle assembleRelease --no-daemon --stacktrace
+
+      - name: Collect APKs
         run: |
+          rm -rf artifacts
           mkdir -p artifacts
           find app/build/outputs/apk -type f -name '*.apk' -exec cp {} artifacts/ \;
           test -n "$(find artifacts -type f -name '*.apk' -print -quit)"
           ls -lh artifacts/
 
-      - name: Upload APK
+      - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
-          name: FireBoost-APK
+          name: FireBoost-APK-v1.1.0
           path: artifacts/*.apk
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 30
